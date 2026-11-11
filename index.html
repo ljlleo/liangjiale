@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>聊天室—梁嘉乐制造</title>
+  <style>
+    body { margin: 0; padding-bottom: 80px; font-family: sans-serif; }
+    #messages { list-style: none; margin: 0; padding: 0; }
+    #messages > li { padding: 0.5rem 1rem; }
+    #messages > li:nth-child(odd) { background: #efefef; }
+    .username { font-weight: bold; color: #333; margin-right: 6px; }
+    #form { background: rgba(0,0,0,0.15); padding: 0.25rem; position: fixed; bottom: 0; width: 100%; display: flex; }
+    #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
+    #form > button { background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; color: #fff; }
+    .credit { text-align: center; color: #888; font-size: 12px; padding: 10px; }
+    #name-bar { padding: 10px; background: #f5f5f5; text-align: center; }
+    #name-bar input { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; }
+    #name-bar button { padding: 6px 14px; margin-left: 6px; border: none; background: #333; color: #fff; border-radius: 4px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="name-bar">
+    <input id="username-input" placeholder="输入你的名字" maxlength="20" />
+    <button id="join-btn">进入聊天</button>
+  </div>
+
+  <ul id="messages"></ul>
+  <form id="form">
+    <input id="input" autocomplete="off" placeholder="输入消息..." /><button>发送</button>
+  </form>
+  <div class="credit">梁嘉乐制造</div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    var socket = io();
+    var username = '';
+    var nameBar = document.getElementById('name-bar');
+    var usernameInput = document.getElementById('username-input');
+    var joinBtn = document.getElementById('join-btn');
+    var form = document.getElementById('form');
+    var input = document.getElementById('input');
+    var messages = document.getElementById('messages');
+
+    joinBtn.addEventListener('click', function () {
+      var name = usernameInput.value.trim();
+      if (!name) {
+        alert('请先输入名字');
+        return;
+      }
+      username = name;
+      nameBar.style.display = 'none';
+      input.disabled = false;
+      input.focus();
+    });
+
+    usernameInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') joinBtn.click();
+    });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!username) {
+        alert('请先输入名字');
+        return;
+      }
+      if (input.value.trim()) {
+        socket.emit('chat message', {
+          username: username,
+          message: input.value.trim()
+        });
+        input.value = '';
+      }
+    });
+
+    socket.on('chat message', function (data) {
+      var item = document.createElement('li');
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'username';
+      nameSpan.textContent = data.username + '：';
+      item.appendChild(nameSpan);
+      item.appendChild(document.createTextNode(data.message));
+      messages.appendChild(item);
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+  </script>
+</body>
+</html>
